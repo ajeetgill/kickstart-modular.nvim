@@ -29,8 +29,13 @@ return {
 
       -- Useful for getting pretty icons, but requires a Nerd Font.
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
+      -- NOTE: required for zoxide-cd
+      { 'jvgrootveld/telescope-zoxide', {} },
     },
     config = function()
+      -- NOTE: required for zoxide-cd
+      local z_utils = require 'telescope._extensions.zoxide.utils'
+
       -- Telescope is a fuzzy finder that comes with a lot of different things that
       -- it can fuzzy find! It's more than just a "file finder", it can search
       -- many different aspects of Neovim, your workspace, LSP, and more!
@@ -66,12 +71,51 @@ return {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
           },
+          -- NOTE: required for zoxide-cd
+          zoxide = {
+            prompt_title = '[ Zoxide List ]',
+
+            -- Zoxide list command with score
+            list_command = 'zoxide query -ls',
+            mappings = {
+              default = {
+                action = function(selection)
+                  vim.cmd.edit(selection.path)
+                end,
+                after_action = function(selection)
+                  vim.cmd.cd(selection.path)
+                  print('Directory changed to ' .. selection.path)
+                end,
+              },
+              ['<C-s>'] = { action = z_utils.create_basic_command 'split' },
+              ['<C-v>'] = { action = z_utils.create_basic_command 'vsplit' },
+              ['<C-e>'] = { action = z_utils.create_basic_command 'edit' },
+              ['<C-b>'] = {
+                keepinsert = true,
+                action = function(selection)
+                  builtin.file_browser { cwd = selection.path }
+                end,
+              },
+              ['<C-f>'] = {
+                keepinsert = true,
+                action = function(selection)
+                  builtin.find_files { cwd = selection.path }
+                end,
+              },
+              ['<C-t>'] = {
+                action = function(selection)
+                  vim.cmd.tcd(selection.path)
+                end,
+              },
+            },
+          },
         },
       }
 
       -- Enable Telescope extensions if they are installed
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require('telescope').load_extension, 'ui-select')
+      pcall(require('telescope').load_extension, 'zoxide')
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
@@ -108,6 +152,28 @@ return {
       vim.keymap.set('n', '<leader>sn', function()
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = '[S]earch [N]eovim files' })
+
+      vim.keymap.set('n', '<leader>cd', function()
+        require('telescope').extensions.zoxide.list {
+          mappings = {
+            default = {
+              action = function(selection)
+                vim.cmd.edit(selection.path)
+              end,
+              after_action = function(selection)
+                vim.cmd.cd(selection.path)
+                print('Directory changed to ' .. selection.path)
+              end,
+            },
+            ['<C-f>'] = {
+              keepinsert = true,
+              action = function(selection)
+                builtin.find_files { cwd = selection.path }
+              end,
+            },
+          },
+        }
+      end, { desc = '[C]hange [D]irectory, uses zoxide' })
     end,
   },
 }
