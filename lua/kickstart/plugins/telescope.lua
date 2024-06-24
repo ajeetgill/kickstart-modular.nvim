@@ -117,7 +117,7 @@ return {
       pcall(require('telescope').load_extension, 'ui-select')
       pcall(require('telescope').load_extension, 'zoxide')
 
-      local open_recent_files = require('custom.open_recent_files')
+      local open_recent_files = require 'custom.open_recent_files'
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
